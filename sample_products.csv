@@ -1,0 +1,6 @@
+product_id,product_name,category,price,supplier
+101,Laptop,Electronics,999.99,TechCorp
+102,Mouse,Accessories,25.5,AccessoryPro
+103,Keyboard,Accessories,75.0,AccessoryPro
+104,Monitor,Electronics,299.99,TechCorp
+105,Headphones,Accessories,150.0,AudioMax
