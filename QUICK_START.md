@@ -4,20 +4,14 @@
 
 ### **1. Prerequisites Check**
 ```bash
-# Check if Ollama is installed
-ollama --version
-
-# Check if Phi-3.5 Mini is available
-ollama list | grep phi3
+# Check if you have an OpenAI API key
+# You'll need to add it to llm_keys.yaml
 ```
 
-### **2. Start Services**
+### **2. Setup API Key**
 ```bash
-# Start Ollama service
-brew services start ollama
-
-# Verify it's running
-brew services list | grep ollama
+# Edit llm_keys.yaml and add your OpenAI API key
+open_ai: "your-openai-api-key-here"
 ```
 
 ### **3. Setup Python Environment**
