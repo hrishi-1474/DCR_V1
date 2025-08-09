@@ -1452,7 +1452,6 @@ def density_based_column_clustering(dataframes):
         return result_clusters
         
     except Exception as e:
-        st.warning(f"Embedding-based clustering failed, falling back to simple similarity: {e}")
         # Fallback to simple similarity clustering
         return simple_similarity_clustering(dataframes)
 
