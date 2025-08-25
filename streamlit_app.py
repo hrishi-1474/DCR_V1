@@ -17,7 +17,9 @@ from functools import partial
 
 # --- Load API key from YAML ---
 try:
-    os.environ["OPENAI_API_KEY"] = st.secrets["open_ai"]
+    with open("llm_keys.yaml", "r") as file:
+        llm_keys = yaml.safe_load(file)
+    os.environ["OPENAI_API_KEY"] = llm_keys["open_ai"]
 except Exception as e:
     st.error(f"Error loading API key: {e}")
     st.info("Please create a 'llm_keys.yaml' file with your OpenAI API key")
@@ -617,6 +619,8 @@ def process_feedback_for_all_groups(all_mappings, all_feedback):
         if group_name in all_feedback and all_feedback[group_name]:
             feedback_json = []
             try:
+                mapping_output = re.sub(r"```(?:json)?", "", mapping_output).strip()
+                mapping_output = mapping_output.encode('utf-8').decode('unicode_escape')
                 parsed_mapping = json.loads(mapping_output)
                 for feedback_item in all_feedback[group_name]:
                     if isinstance(feedback_item, dict) and 'Brand name' in feedback_item and 'classified_as' in feedback_item:
@@ -1000,9 +1004,13 @@ def dedicated_data_cleaning_interface():
             for group_name, mapping_output in st.session_state.all_column_groups_mappings.items():
                 st.markdown(f"### {group_name}")
                 
-                try:
+                try: 
+                    mapping_output = re.sub(r"```(?:json)?", "", mapping_output).strip()
+                    mapping_output = mapping_output.encode('utf-8').decode('unicode_escape')
+                    print("length of mapping_output", len(mapping_output))
+                    print("mapping_output", mapping_output)
                     parsed_mapping = json.loads(mapping_output)
-                    
+                    print("length of parsed_mapping", len(parsed_mapping))
                     # Create table data for this specific group
                     group_table_data = []
                     for item in parsed_mapping:
@@ -1094,6 +1102,8 @@ def dedicated_data_cleaning_interface():
             st.markdown(f"### {group_name}")
             
             try:
+                mapping_output = re.sub(r"```(?:json)?", "", mapping_output).strip()
+                mapping_output = mapping_output.encode('utf-8').decode('unicode_escape')
                 parsed_mapping = json.loads(mapping_output)
                 
                 # Create table data for this specific group
