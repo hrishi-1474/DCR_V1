@@ -325,6 +325,7 @@ CRITICAL REQUIREMENTS:
 - Every input brand name must appear exactly once in the output.
 - Do not add extra mappings or skip any input values.
 - Do not invent new brand names not in the original brand name list.
+- Return valid JSON only. Make sure all backslashes are escaped (\\) so that the JSON can be parsed directly with json.loads in Python without errors.
 - Every provided brand name must be included under some group (even if standalone).
 
 
@@ -361,6 +362,7 @@ Your task is to:
 CRITICAL REQUIREMENTS:
 - You MUST return exactly the same number of mappings as the previous classification.
 - Every input brand name must appear exactly once in the output.
+- Return valid JSON only. Make sure all backslashes are escaped (\\) so that the JSON can be parsed directly with json.loads in Python without errors.
 - Do not add extra mappings or skip any input values.
 - Do not invent new brand names not in the original list.
 
@@ -443,7 +445,9 @@ def calculate_column_group_summary(cluster_columns, dataframes):
                         string_values = []
                         for val in col_values:
                             if isinstance(val, str):
-                                string_values.append(val)
+                                # Clean the brand name before processing
+                                cleaned_val = clean_brand_name(val)
+                                string_values.append(cleaned_val)
                         
                         # Get unique string values
                         col_unique_values = list(set(string_values))
@@ -620,7 +624,8 @@ def process_feedback_for_all_groups(all_mappings, all_feedback):
             feedback_json = []
             try:
                 mapping_output = re.sub(r"```(?:json)?", "", mapping_output).strip()
-                mapping_output = mapping_output.encode('utf-8').decode('unicode_escape')
+                mapping_output = clean_invalid_escapes(mapping_output)
+                 # indent for readability
                 parsed_mapping = json.loads(mapping_output)
                 for feedback_item in all_feedback[group_name]:
                     if isinstance(feedback_item, dict) and 'Brand name' in feedback_item and 'classified_as' in feedback_item:
@@ -974,6 +979,25 @@ def calculate_standardization_stats(mapping_output):
         return None
     return None
 
+
+def clean_invalid_escapes(s: str) -> str:
+    # Replace any backslash not followed by a valid JSON escape
+    return re.sub(r'\\(?![\\/"bfnrtu])', r'\\\\', s)
+
+def clean_brand_name(name: str) -> str:
+    """Clean brand names by removing invalid backslashes and normalizing whitespace."""
+    if not isinstance(name, str):
+        return name
+    
+    # Replace invalid backslashes: keep only valid escapes
+    # Valid ones in JSON: \", \\, \/, \b, \f, \n, \r, \t, \uXXXX
+    name = re.sub(r'\\(?![\\/"bfnrtu])', r'\\\\', name)
+    
+    # Optionally: collapse multiple spaces
+    name = re.sub(r'\s+', ' ', name).strip()
+    
+    return name
+
 def dedicated_data_cleaning_interface():
     """Dedicated data cleaning interface with comprehensive mappings table and iterative refinement."""
     st.header("Data Value Standardizer")
@@ -1006,7 +1030,9 @@ def dedicated_data_cleaning_interface():
                 
                 try: 
                     mapping_output = re.sub(r"```(?:json)?", "", mapping_output).strip()
-                    mapping_output = mapping_output.encode('utf-8').decode('unicode_escape')
+                    mapping_output = clean_invalid_escapes(mapping_output)
+                    with open("initial_mapping.json", "w") as json_file:
+                        json.dump(mapping_output, json_file, indent=4)
                     print("length of mapping_output", len(mapping_output))
                     print("mapping_output", mapping_output)
                     parsed_mapping = json.loads(mapping_output)
@@ -1103,7 +1129,7 @@ def dedicated_data_cleaning_interface():
             
             try:
                 mapping_output = re.sub(r"```(?:json)?", "", mapping_output).strip()
-                mapping_output = mapping_output.encode('utf-8').decode('unicode_escape')
+                mapping_output = clean_invalid_escapes(mapping_output)
                 parsed_mapping = json.loads(mapping_output)
                 
                 # Create table data for this specific group
@@ -1194,6 +1220,8 @@ def dedicated_data_cleaning_interface():
             with pd.ExcelWriter("final_mappings_only.xlsx", engine='openpyxl') as writer:
                 for group_name, mapping_output in st.session_state.all_column_groups_mappings.items():
                     try:
+                        mapping_output = re.sub(r"```(?:json)?", "", mapping_output).strip()
+                        mapping_output = clean_invalid_escapes(mapping_output)
                         parsed_mapping = json.loads(mapping_output)
                         
                         # Create mapping dataframe for this group
